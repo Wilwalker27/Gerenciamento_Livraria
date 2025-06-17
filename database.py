@@ -1,8 +1,6 @@
-# Arquivo: database.py (versão 4 - Completa)
-
 import sqlite3
 import hashlib
-import random # Usaremos para variar a disponibilidade dos livros
+import random 
 
 def criar_banco():
     """
@@ -44,7 +42,8 @@ def criar_banco():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome_completo TEXT NOT NULL,
             telefone TEXT,
-            endereco TEXT
+            endereco TEXT,
+            email TEXT
         )
     ''')
 
@@ -58,14 +57,11 @@ def criar_banco():
             data_emprestimo DATE NOT NULL,
             data_devolucao DATE,
             status TEXT NOT NULL CHECK(status IN ('emprestado', 'devolvido')),
-            observacoes TEXT, -- NOVA COLUNA
+            observacoes TEXT,
             FOREIGN KEY (livro_id) REFERENCES livros(id),
             FOREIGN KEY (leitor_id) REFERENCES leitores(id)
         )
     ''')
-
-
-    # --- INSERÇÃO DE DADOS DE EXEMPLO (APENAS SE AS TABELAS ESTIVEREM VAZIAS) ---
 
     # Insere usuários iniciais
     cursor.execute("SELECT COUNT(*) FROM usuarios")
@@ -80,7 +76,7 @@ def criar_banco():
     # Insere a lista de 50 livros famosos
     cursor.execute("SELECT COUNT(*) FROM livros")
     if cursor.fetchone()[0] == 0:
-        print("Inserindo lista de 50 livros famosos...")
+        print("Banco de dados contendo livros foram inseridos no sistema!")
         livros_famosos = [
             ('Dom Quixote', 'Miguel de Cervantes', 'Editora Fictícia', 1605, 1),
             ('O Senhor dos Anéis', 'J.R.R. Tolkien', 'Editora Fictícia', 1954, 1),
@@ -141,16 +137,14 @@ def criar_banco():
     cursor.execute("SELECT COUNT(*) FROM leitores")
     if cursor.fetchone()[0] == 0:
         print("Inserindo leitor de exemplo...")
-        cursor.execute("INSERT INTO leitores (nome_completo, telefone, endereco) VALUES (?, ?, ?)",
-                       ('João da Silva Leitor', '71999998888', 'Rua das Flores, 123'))
+        cursor.execute("INSERT INTO leitores (nome_completo, telefone, endereco, email) VALUES (?, ?, ?, ?)",
+                       ('João da Silva Leitor', '71999998888', 'Rua das Flores, 123', 'joao.leitor@email.com'))
         print("Leitor de exemplo inserido.")
-
 
     # Salva as alterações e fecha a conexão
     conn.commit()
     conn.close()
     print("\nBanco de dados 'biblioteca.db' verificado e pronto para uso.")
-
 
 if __name__ == '__main__':
     criar_banco()

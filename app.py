@@ -4,6 +4,7 @@ from tkinter import messagebox
 import sqlite3
 import hashlib
 from PIL import Image, ImageTk
+from datetime import date
 
 # CORES E FONTES 
 COR_FUNDO = "#0d1b2a"
@@ -244,6 +245,119 @@ class TelaRegistrarDevolucao(FormularioBase):
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível registrar a devolução. Erro: {e}", parent=self)
 
+# TELA PARA CADASTRAR LEITOR
+class TelaCadastrarLeitor(FormularioBase):
+    def __init__(self, root):
+        super().__init__(root)
+        self.title("Cadastrar Novo Leitor")
+
+        tk.Label(self.main_frame, text="CADASTRAR LEITOR", font=FONTE_TITULO, bg=COR_FUNDO, fg=COR_TEXTO).pack(pady=(0, 20))
+        
+        self.entry_nome = self.criar_campo("Nome")
+        self.entry_endereco = self.criar_campo("Endereço")
+        self.entry_telefone = self.criar_campo("Telefone")
+        self.entry_email = self.criar_campo("Email")
+
+        btn_registrar = tk.Label(self.main_frame, text="Registrar", font=("Arial", 14, "bold"), bg=COR_BOTAO, fg=COR_TEXTO, cursor="hand2")
+        btn_registrar.pack(pady=30, ipady=12, fill='x')
+        btn_registrar.bind("<Button-1>", self.registrar_leitor)
+
+    def registrar_leitor(self, event=None):
+        nome = self.entry_nome.get()
+        endereco = self.entry_endereco.get()
+        telefone = self.entry_telefone.get()
+        email = self.entry_email.get()
+
+        if not nome:
+            messagebox.showerror("Erro de Cadastro", "O campo 'Nome' é obrigatório.", parent=self)
+            return
+
+        try:
+            query = "INSERT INTO leitores (nome_completo, endereco, telefone, email) VALUES (?, ?, ?, ?)"
+            executar_query(query, (nome, endereco, telefone, email))
+            messagebox.showinfo("Sucesso", f"Leitor '{nome}' cadastrado com sucesso!", parent=self)
+            self.destroy() # Fecha a janela de cadastro
+        except sqlite3.IntegrityError:
+            messagebox.showerror("Erro", "Já existe um leitor com este nome.", parent=self)
+        except Exception as e:
+            messagebox.showerror("Erro", f"Ocorreu um erro ao cadastrar o leitor: {e}", parent=self)
+
+
+# --- Classes das Janelas de Gerenciamento ---
+class TelaGerenciarLeitores(tk.Toplevel):
+    def __init__(self, root):
+        super().__init__(root)
+        self.title("Gerenciar Leitores")
+        self.geometry("800x600")
+        self.configure(bg=COR_FUNDO)
+
+        # Frame de busca
+        frame_busca = tk.Frame(self, bg=COR_FUNDO)
+        frame_busca.pack(pady=20, padx=20, fill='x')
+        tk.Label(frame_busca, text="Pesquise por um Leitor:", font=FONTE_NORMAL, bg=COR_FUNDO, fg=COR_TEXTO).pack(side='left', padx=(0, 10))
+        self.entry_busca = tk.Entry(frame_busca, font=FONTE_NORMAL, width=40, bg=COR_FRAME, fg=COR_TEXTO, relief='flat', insertbackground=COR_TEXTO)
+        self.entry_busca.pack(side='left', fill='x', expand=True, ipady=5)
+        self.entry_busca.bind("<KeyRelease>", self.buscar_leitor)
+
+        # Tabela de Leitores
+        frame_tabela = tk.Frame(self, bg=COR_FUNDO)
+        frame_tabela.pack(pady=10, padx=20, fill='both', expand=True)
+
+        # Estilo da Tabela
+        style = ttk.Style()
+        style.theme_use("default")
+        style.configure("Treeview", background=COR_FRAME, foreground=COR_TEXTO, fieldbackground=COR_FRAME, rowheight=25, font=FONTE_NORMAL)
+        style.configure("Treeview.Heading", background=COR_BOTAO, foreground=COR_TEXTO, font=("Arial", 12, "bold"), relief="flat")
+        style.map("Treeview", background=[('selected', COR_BOTAO_HOVER)])
+        style.map("Treeview.Heading", background=[('active', COR_BOTAO)])
+
+        self.tabela = ttk.Treeview(frame_tabela, columns=('nome', 'telefone', 'endereco', 'email'), show='tree headings')
+        self.tabela.column("#0", width=0, stretch=tk.NO)
+        self.tabela.heading('nome', text='Nome', anchor='center')
+        self.tabela.heading('telefone', text='Telefone', anchor='center')
+        self.tabela.heading('endereco', text='Endereço', anchor='center')
+        self.tabela.heading('email', text='Email', anchor='center')
+        self.tabela.column('nome', width=250)
+        self.tabela.column('telefone', width=150)
+        self.tabela.column('endereco', width=300)
+        self.tabela.column('email', width=250)
+
+        self.tabela.pack(fill='both', expand=True)
+        self.popular_tabela_leitores()
+
+        # Botão para cadastrar novo leitor
+        btn_cadastrar = tk.Label(self, text="Cadastrar leitor", font=("Arial", 14, "bold"), bg=COR_BOTAO, fg=COR_TEXTO, cursor="hand2")
+        btn_cadastrar.pack(pady=20, ipady=12, ipadx=20)
+        btn_cadastrar.bind("<Button-1>", self.abrir_cadastro_leitor)
+
+    def popular_tabela_leitores(self, query=None):
+        # Limpa a tabela
+        for row in self.tabela.get_children():
+            self.tabela.delete(row)
+
+        if query:
+            sql = "SELECT nome_completo, telefone, endereco, email FROM leitores WHERE nome_completo LIKE ? ORDER BY nome_completo"
+            params = (f'%{query}%',)
+        else:
+            sql = "SELECT nome_completo, telefone, endereco, email FROM leitores ORDER BY nome_completo"
+            params = ()
+            
+        leitores = executar_query(sql, params, fetch='fetchall')
+        
+        for leitor in leitores:
+            self.tabela.insert('', 'end', values=leitor)
+
+    def buscar_leitor(self, event=None):
+        query = self.entry_busca.get()
+        self.popular_tabela_leitores(query)
+
+    def abrir_cadastro_leitor(self, event=None):
+        # Abre a janela de cadastro
+        janela_cadastro = TelaCadastrarLeitor(self)
+        # Faz a janela principal esperar pela de cadastro
+        self.wait_window(janela_cadastro)
+        # Atualiza a tabela depois que a janela de cadastro for fechada
+        self.popular_tabela_leitores()
 # --- FUNÇÕES DE ABERTURA DE JANELAS ---
 def abrir_tela_registro_livro(root):
     TelaRegistrarLivro(root)
@@ -254,8 +368,8 @@ def abrir_tela_registro_emprestimo(root):
 def abrir_tela_registro_devolucao(root):
     TelaRegistrarDevolucao(root)
 
-def abrir_gerenciar_leitores():
-    messagebox.showinfo("Em Construção", "A área para gerenciar leitores será implementada aqui.")
+def abrir_gerenciar_leitores(root):
+    TelaGerenciarLeitores(root)
 
 class TelaAdmin:
     def __init__(self, root, usuario):
@@ -278,7 +392,7 @@ class TelaAdmin:
             ("Registrar Livros", lambda: abrir_tela_registro_livro(self.root)),
             ("Registrar Empréstimo", lambda: abrir_tela_registro_emprestimo(self.root)),
             ("Registrar Devolução", lambda: abrir_tela_registro_devolucao(self.root)),
-            ("Gerenciar Leitores", abrir_gerenciar_leitores)
+            ("Gerenciar Leitores", lambda: abrir_gerenciar_leitores(self.root))
         ]
 
         for texto, comando in botoes_info:
