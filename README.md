@@ -79,7 +79,6 @@ Antes de começar, garanta que você tenha o **Python 3** instalado.
 1.  **Clone este repositório** (ou baixe o ZIP e extraia):
     ```bash
     git clone 
-[https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
     ```
 
 2.  **Navegue até a pasta do projeto:**
@@ -145,5 +144,5 @@ O projeto tem uma base sólida e pode ser expandido com novas funcionalidades, c
 
 ### ✒️ Autor
 
-Feito com ❤️ por **Wiliaml Rigne**.
+Feito com ❤️ por **William Rigne**.
 
