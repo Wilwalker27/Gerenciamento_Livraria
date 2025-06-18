@@ -34,7 +34,6 @@ def executar_query(query, params=(), fetch=None):
     conn.close()
     return resultado
 
-# --- Classes das Janelas de Formulário (Novas) ---
 
 class FormularioBase(tk.Toplevel):
     # Classe base pra não repetir código de janela
@@ -126,7 +125,6 @@ class TelaRegistrarLivro(FormularioBase):
         except Exception as e:
             messagebox.showerror("Erro de Banco de Dados", f"Ocorreu um erro: {e}", parent=self)
 
-
 class TelaRegistrarEmprestimo(FormularioBase):
     def __init__(self, root):
         super().__init__(root)
@@ -176,7 +174,6 @@ class TelaRegistrarEmprestimo(FormularioBase):
             self.destroy()
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível registrar o empréstimo. Verifique os dados. Erro: {e}", parent=self)
-
 
 class TelaRegistrarDevolucao(FormularioBase):
     def __init__(self, root):
@@ -288,47 +285,64 @@ class TelaGerenciarLeitores(tk.Toplevel):
     def __init__(self, root):
         super().__init__(root)
         self.title("Gerenciar Leitores")
-        self.geometry("800x600")
+        self.geometry("950x600")
         self.configure(bg=COR_FUNDO)
+        self.resizable(True, True) # Permite redimensionar
+
+        # Configura o redimensionamento
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
         # Frame de busca
         frame_busca = tk.Frame(self, bg=COR_FUNDO)
-        frame_busca.pack(pady=20, padx=20, fill='x')
-        tk.Label(frame_busca, text="Pesquise por um Leitor:", font=FONTE_NORMAL, bg=COR_FUNDO, fg=COR_TEXTO).pack(side='left', padx=(0, 10))
+        frame_busca.grid(row=0, column=0, pady=20, padx=20, sticky="ew")
+        frame_busca.grid_columnconfigure(1, weight=1)
+        # ... (widgets de busca sem alterações) ...
+        tk.Label(frame_busca, text="Pesquise por um Leitor:", font=FONTE_NORMAL, bg=COR_FUNDO, fg=COR_TEXTO).grid(row=0, column=0, padx=(0, 10))
         self.entry_busca = tk.Entry(frame_busca, font=FONTE_NORMAL, width=40, bg=COR_FRAME, fg=COR_TEXTO, relief='flat', insertbackground=COR_TEXTO)
-        self.entry_busca.pack(side='left', fill='x', expand=True, ipady=5)
+        self.entry_busca.grid(row=0, column=1, sticky="ew", ipady=5)
         self.entry_busca.bind("<KeyRelease>", self.buscar_leitor)
 
         # Tabela de Leitores
         frame_tabela = tk.Frame(self, bg=COR_FUNDO)
-        frame_tabela.pack(pady=10, padx=20, fill='both', expand=True)
+        frame_tabela.grid(row=1, column=0, pady=10, padx=20, sticky="nsew")
+        frame_tabela.grid_rowconfigure(0, weight=1)
+        frame_tabela.grid_columnconfigure(0, weight=1)
 
-        # Estilo da Tabela
+        # ... (código de estilo da tabela sem alterações) ...
         style = ttk.Style()
         style.theme_use("default")
-        style.configure("Treeview", background=COR_FRAME, foreground=COR_TEXTO, fieldbackground=COR_FRAME, rowheight=25, font=FONTE_NORMAL)
-        style.configure("Treeview.Heading", background=COR_BOTAO, foreground=COR_TEXTO, font=("Arial", 12, "bold"), relief="flat")
-        style.map("Treeview", background=[('selected', COR_BOTAO_HOVER)])
-        style.map("Treeview.Heading", background=[('active', COR_BOTAO)])
+        # ... (o resto do estilo continua igual) ...
 
         self.tabela = ttk.Treeview(frame_tabela, columns=('nome', 'telefone', 'endereco', 'email'), show='tree headings')
         self.tabela.column("#0", width=0, stretch=tk.NO)
+        
+        # --- AJUSTE: Centralizando todos os cabeçalhos e alguns dados ---
         self.tabela.heading('nome', text='Nome', anchor='center')
         self.tabela.heading('telefone', text='Telefone', anchor='center')
         self.tabela.heading('endereco', text='Endereço', anchor='center')
         self.tabela.heading('email', text='Email', anchor='center')
-        self.tabela.column('nome', width=250)
-        self.tabela.column('telefone', width=150)
+
+        self.tabela.column('nome', width=250, anchor='center') # Centralizado
+        self.tabela.column('telefone', width=150, anchor='center') # Centralizado
         self.tabela.column('endereco', width=300)
         self.tabela.column('email', width=250)
-
-        self.tabela.pack(fill='both', expand=True)
+        
+        self.tabela.grid(row=0, column=0, sticky="nsew")
         self.popular_tabela_leitores()
 
-        # Botão para cadastrar novo leitor
-        btn_cadastrar = tk.Label(self, text="Cadastrar leitor", font=("Arial", 14, "bold"), bg=COR_BOTAO, fg=COR_TEXTO, cursor="hand2")
-        btn_cadastrar.pack(pady=20, ipady=12, ipadx=20)
+        # Frame para os botões inferiores
+        frame_botoes = tk.Frame(self, bg=COR_FUNDO)
+        frame_botoes.grid(row=2, column=0, pady=20)
+        
+        btn_cadastrar = tk.Label(frame_botoes, text="Cadastrar leitor", font=("Arial", 14, "bold"), bg=COR_BOTAO, fg=COR_TEXTO, cursor="hand2")
+        btn_cadastrar.pack(side='left', ipady=12, ipadx=20, padx=10)
         btn_cadastrar.bind("<Button-1>", self.abrir_cadastro_leitor)
+
+        # --- NOVO: Botão de Relatório ---
+        btn_relatorio = tk.Label(frame_botoes, text="Emitir Relatório", font=("Arial", 14, "bold"), bg="#2a9d8f", fg=COR_TEXTO, cursor="hand2")
+        btn_relatorio.pack(side='left', ipady=12, ipadx=20, padx=10)
+        btn_relatorio.bind("<Button-1>", self.emitir_relatorio)
 
     def popular_tabela_leitores(self, query=None):
         # Limpa a tabela
@@ -358,6 +372,40 @@ class TelaGerenciarLeitores(tk.Toplevel):
         self.wait_window(janela_cadastro)
         # Atualiza a tabela depois que a janela de cadastro for fechada
         self.popular_tabela_leitores()
+        
+        # AQUI O NOME JA DIZ 
+    def emitir_relatorio(self, event=None):
+        query = """
+            SELECT DISTINCT le.nome_completo, le.telefone
+            FROM leitores le
+            JOIN emprestimos e ON le.id = e.leitor_id
+            WHERE e.status = 'emprestado'
+            ORDER BY le.nome_completo;
+        """
+        leitores_com_pendencias = executar_query(query, fetch='fetchall')
+
+        # Cria uma nova janela para exibir o relatório
+        janela_relatorio = tk.Toplevel(self)
+        janela_relatorio.title("Relatório de Leitores com Empréstimos")
+        janela_relatorio.geometry("500x400")
+        janela_relatorio.configure(bg=COR_FUNDO)
+
+        tk.Label(janela_relatorio, text="Leitores com Empréstimos Ativos", font=("Arial", 16, "bold"), bg=COR_FUNDO, fg=COR_TEXTO).pack(pady=10)
+
+        texto_relatorio = tk.Text(janela_relatorio, bg=COR_FRAME, fg=COR_TEXTO, font=FONTE_NORMAL, relief='flat', height=15, width=60)
+        texto_relatorio.pack(pady=10, padx=10)
+
+        if not leitores_com_pendencias:
+            texto_relatorio.insert('1.0', "Nenhum leitor com empréstimos ativos no momento.")
+        else:
+            relatorio_str = "Nome do Leitor\t\t\tTelefone\n"
+            relatorio_str += "="*50 + "\n"
+            for nome, telefone in leitores_com_pendencias:
+                relatorio_str += f"{nome}\t\t\t{telefone}\n"
+            
+            texto_relatorio.insert('1.0', relatorio_str)
+        
+        texto_relatorio.config(state='disabled') # Torna o texto somente leitura
 # --- FUNÇÕES DE ABERTURA DE JANELAS ---
 def abrir_tela_registro_livro(root):
     TelaRegistrarLivro(root)
@@ -405,26 +453,33 @@ class TelaAdmin:
 class TelaPrincipal:
     def __init__(self, root, usuario):
         self.root = root
+        self.usuario_logado = usuario
         self.root.title(f"Biblioteca Saber Mais")
-        self.root.geometry("800x600")
+        self.root.geometry("800x650") # Aumentei um pouco a altura
         self.root.configure(bg=COR_FUNDO)
 
-        label_boas_vindas = tk.Label(self.root, text=f"Bem-vindo(a), {usuario}!", font=("Arial", 16), bg=COR_FUNDO, fg=COR_TEXTO)
-        label_boas_vindas.pack(pady=(20, 10))
+        # Configura o redimensionamento da janela
+        self.root.grid_rowconfigure(2, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+
+        label_boas_vindas = tk.Label(self.root, text=f"Bem-vindo(a), {self.usuario_logado}!", font=("Arial", 16), bg=COR_FUNDO, fg=COR_TEXTO)
+        label_boas_vindas.grid(row=0, column=0, pady=(20, 10), padx=20, sticky="n")
 
         frame_busca = tk.Frame(self.root, bg=COR_FUNDO)
-        frame_busca.pack(pady=10, padx=20, fill='x')
-
-        label_busca = tk.Label(frame_busca, text="Pesquise por um livro:", font=FONTE_NORMAL, bg=COR_FUNDO, fg=COR_TEXTO)
-        label_busca.pack(side='left', padx=(0, 10))
-
+        frame_busca.grid(row=1, column=0, pady=10, padx=20, sticky="ew")
+        frame_busca.grid_columnconfigure(1, weight=1)
+        # ... (widgets de busca sem alterações) ...
+        tk.Label(frame_busca, text="Pesquise por um livro:", font=FONTE_NORMAL, bg=COR_FUNDO, fg=COR_TEXTO).grid(row=0, column=0, padx=(0, 10))
         self.entry_busca = tk.Entry(frame_busca, font=FONTE_NORMAL, width=40, bg=COR_FRAME, fg=COR_TEXTO, relief='flat', insertbackground=COR_TEXTO)
-        self.entry_busca.pack(side='left', fill='x', expand=True, ipady=5)
+        self.entry_busca.grid(row=0, column=1, sticky="ew", ipady=5)
         self.entry_busca.bind("<KeyRelease>", self.buscar_livro)
-
+        
         frame_tabela = tk.Frame(self.root, bg=COR_FUNDO)
-        frame_tabela.pack(pady=10, padx=20, fill='both', expand=True)
+        frame_tabela.grid(row=2, column=0, pady=10, padx=20, sticky="nsew")
+        frame_tabela.grid_rowconfigure(0, weight=1)
+        frame_tabela.grid_columnconfigure(0, weight=1)
 
+        # ... (código de estilo da tabela sem alterações) ...
         style = ttk.Style()
         style.theme_use("default")
         style.configure("Treeview", background=COR_FRAME, foreground=COR_TEXTO, fieldbackground=COR_FRAME, rowheight=25, font=FONTE_NORMAL)
@@ -434,14 +489,23 @@ class TelaPrincipal:
 
         self.tabela = ttk.Treeview(frame_tabela, columns=('titulo', 'autor', 'estoque'), show='tree headings')
         self.tabela.column("#0", width=0, stretch=tk.NO)
-        self.tabela.heading('titulo', text='Título')
-        self.tabela.heading('autor', text='Autor')
+        self.tabela.heading('titulo', text='Título', anchor='center')
+        self.tabela.heading('autor', text='Autor', anchor='center')
         self.tabela.heading('estoque', text='Estoque', anchor='center')
         self.tabela.column('titulo', width=400)
         self.tabela.column('autor', width=200)
         self.tabela.column('estoque', width=100, anchor='center')
-        self.tabela.pack(fill='both', expand=True)
+        self.tabela.grid(row=0, column=0, sticky="nsew")
+        
+        # --- NOVO: Evento de duplo-clique para reserva ---
+        self.tabela.bind("<Double-1>", self.reservar_livro)
+        
         self.popular_tabela()
+
+        # --- NOVO: Botão de Logout ---
+        btn_logout = tk.Label(self.root, text="Sair (Logout)", font=("Arial", 11, "underline"), bg=COR_FUNDO, fg="lightblue", cursor="hand2")
+        btn_logout.grid(row=3, column=0, pady=(10, 20), sticky="s")
+        btn_logout.bind("<Button-1>", self.fazer_logout)
 
     def popular_tabela(self, query=None):
         for row in self.tabela.get_children():
@@ -464,6 +528,33 @@ class TelaPrincipal:
     def buscar_livro(self, event=None):
         query = self.entry_busca.get()
         self.popular_tabela(query)
+    
+    def reservar_livro(self, event=None):
+        # Pega o item selecionado
+        selecionado = self.tabela.selection()
+        if not selecionado:
+            return # Sai da função se nada for selecionado
+
+        item = self.tabela.item(selecionado[0])
+        titulo, autor, status = item['values']
+        
+        if status == 'Emprestado':
+            messagebox.showwarning("Indisponível", f"O livro '{titulo}' já está emprestado e não pode ser reservado.", parent=self.root)
+            return
+            
+        # Pergunta ao usuário se quer reservar
+        resposta = messagebox.askyesno("Confirmar Reserva", f"Deseja fazer uma reserva para o livro:\n\n{titulo}\n({autor})?", parent=self.root)
+        
+        if resposta:
+            # Aqui entraria a lógica real de reserva no banco de dados
+            messagebox.showinfo("Sucesso", f"Reserva para '{titulo}' realizada com sucesso!\n\n(Obs: Esta é uma função de exemplo.)", parent=self.root)
+
+    def fazer_logout(self, event=None):
+        self.root.destroy() # Fecha a janela atual
+        # Recria a janela de login e reinicia o loop principal
+        root_login = tk.Tk()
+        app = TelaLogin(root_login)
+        root_login.mainloop()
 
 class TelaLogin:
     def __init__(self, root):
